@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070b24">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Robô Runner — Corrida do Hardware</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <div id="hearts" aria-label="Vidas"></div>
+    <div id="score">0</div>
+    <button id="btnPause" aria-label="Pausar">II</button>
+  </div>
+  <div id="chips"></div>
+  <div id="toast"></div>
+  <div id="hint">Deslize ◀ ▶ para trocar de pista<br>▲ pular &nbsp;·&nbsp; ▼ deslizar</div>
+</div>
+<div id="flash"></div>
+<div id="count" class="hidden"></div>
+
+<!-- MENU -->
+<div id="menu" class="screen">
+  <div class="title">
+    <h1>ROBÔ <span>RUNNER</span></h1>
+    <p>Corrida do Hardware</p>
+  </div>
+  <div class="worlds">
+    <p class="choose">Escolha o mundo</p>
+    <button class="world" data-world="externo">
+      <b>Hardware Externo</b>
+      <small>Mesa cibernética · monitor, teclado, mouse, gabinete…</small>
+      <em id="best-externo"></em>
+    </button>
+    <button class="world w2" data-world="interno">
+      <b>Hardware Interno</b>
+      <small>Dentro da placa-mãe · RAM, processador, SSD, cooler…</small>
+      <em id="best-interno"></em>
+    </button>
+    <p class="how">Deslize na tela (ou use as setas do teclado) · 3 vidas · responda aos desafios!</p>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="screen dim hidden">
+  <div class="card">
+    <div class="tag">DESAFIO · <span id="qItem"></span></div>
+    <h2 id="qText"></h2>
+    <div id="qOps"></div>
+    <div id="qExp" class="hidden"></div>
+    <button id="qNext" class="btn hidden">Continuar</button>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pause" class="screen dim hidden">
+  <div class="card center">
+    <h2>Pausado</h2>
+    <button id="btnResume" class="btn">Continuar</button>
+    <button id="btnQuit" class="btn ghost">Sair para o menu</button>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="over" class="screen dim hidden">
+  <div class="card center">
+    <div class="tag">FIM DE JOGO</div>
+    <div id="oScore" class="big">0</div>
+    <div id="oBest"></div>
+    <div class="stats">
+      <div><b id="oPieces">0</b><span>peças coletadas</span></div>
+      <div><b id="oQuiz">0</b><span>respostas certas</span></div>
+    </div>
+    <button id="btnRetry" class="btn">Jogar de novo</button>
+    <button id="btnMenu" class="btn ghost">Trocar de mundo</button>
+  </div>
+</div>
+
+<div id="err" class="hidden">Não foi possível carregar o motor 3D. Verifique sua conexão com a internet e recarregue a página.</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
