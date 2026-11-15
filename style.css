@@ -22,7 +22,7 @@ button{font:inherit;color:inherit;cursor:pointer;border:0}
   filter:drop-shadow(0 0 6px rgba(255,77,109,.7));transition:background .2s,transform .2s}
 #hearts i.off{background:#2a3358;transform:scale(.85)}
 #score{font-family:Orbitron,sans-serif;font-weight:800;font-size:26px;letter-spacing:1px;
-  text-shadow:0 0 12px rgba(33,200,255,.8);font-variant-numeric:tabular-nums}
+  text-shadow:0 2px 6px rgba(0,20,70,.9),0 0 12px rgba(0,60,160,.9);font-variant-numeric:tabular-nums}
 #btnPause{pointer-events:auto;width:44px;height:44px;border-radius:12px;
   background:rgba(10,18,52,.75);border:1px solid rgba(33,200,255,.5);
   font-weight:800;font-size:15px;letter-spacing:2px;margin-left:52px}
