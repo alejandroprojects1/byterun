@@ -296,7 +296,7 @@ const robot = buildRobot();
 scene.add(robot);
 const shadow = grp(
   rot(mesh(new THREE.CircleGeometry(.8, 28), new THREE.MeshBasicMaterial({ color: 0, transparent: true, opacity: .45, depthWrite: false }), 0, .03, 0), -Math.PI / 2),
-  rot(mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: haloTex(), color: 0x1e6dff, blending: THREE.AdditiveBlending, transparent: true, opacity: .5, depthWrite: false, toneMapped: false }), 0, .04, 0), -Math.PI / 2));
+  rot(mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: haloTex(), color: 0x1e6dff, blending: THREE.AdditiveBlending, transparent: true, opacity: .2, depthWrite: false, toneMapped: false }), 0, .04, 0), -Math.PI / 2));
 scene.add(shadow);
 
 /* =====================================================================
@@ -394,18 +394,20 @@ const OBST = {
    CENÁRIO
    ===================================================================== */
 let world = null, worldKey = 'externo', trackTex, groundTex, decor = [], clouds = [];
-function trackTexture(k) {
-  return canvasTex(256, 256, (c, w, h) => {
-    const ext = k === 'externo';
-    c.fillStyle = ext ? '#0b1136' : '#07261c'; c.fillRect(0, 0, w, h);
-    c.strokeStyle = ext ? 'rgba(60,110,255,.25)' : 'rgba(242,182,50,.28)'; c.lineWidth = 2;
-    if (ext) { for (let y = 0; y < h; y += 64) { c.beginPath(); c.moveTo(0, y + 1); c.lineTo(w, y + 1); c.stroke(); } }
-    else for (const x of [30, 52, 128, 204, 226]) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); c.fillStyle = 'rgba(242,182,50,.6)'; c.beginPath(); c.arc(x, (x * 7) % h, 5, 0, 7); c.fill(); }
-    const col = ext ? '#21c8ff' : '#3dffb0';
-    c.shadowColor = col; c.shadowBlur = 10; c.strokeStyle = col; c.lineWidth = 4;
-    for (const u of [.348, .652]) { c.setLineDash(ext ? [70, 58] : []); c.beginPath(); c.moveTo(u * w, 0); c.lineTo(u * w, h); c.stroke(); }
-    c.setLineDash([]); c.lineWidth = 6;
-    for (const u of [.02, .98]) { c.beginPath(); c.moveTo(u * w, 0); c.lineTo(u * w, h); c.stroke(); }
+function trackTexture(k) {          // asfalto comum com faixas pintadas
+  return canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = '#3b3d42'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 14000; i++) {                       // granulado do asfalto
+      const v = 30 + Math.floor(Math.random() * 70);
+      c.fillStyle = 'rgba(' + v + ',' + v + ',' + (v + 4) + ',.5)';
+      c.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1 + Math.random() * 2);
+    }
+    const paint = k === 'externo' ? '#f2f2ee' : '#f1c232';
+    c.fillStyle = paint; c.globalAlpha = .92;
+    for (const u of [.348, .652]) for (let y = 0; y < h; y += 256) c.fillRect(u * w - 5, y + 40, 10, 150);   // faixas tracejadas
+    c.fillStyle = '#f2f2ee';
+    for (const u of [.04, .96]) c.fillRect(u * w - 5, 0, 10, h);                                           // bordas contínuas
+    c.globalAlpha = 1;
   }, 1, TRACK_LEN / TILE);
 }
 function groundTexture(k) {
@@ -497,12 +499,12 @@ function setupWorld(k) {
   world = new THREE.Group(); scene.add(world);
   scene.background = skyTexture(); scene.fog = new THREE.Fog(0xd0e8f9, 55, 150);
   trackTex = trackTexture(k); groundTex = groundTexture(k);
-  const tr = rot(mesh(new THREE.PlaneGeometry(TILE, TRACK_LEN), new THREE.MeshStandardMaterial({ map: trackTex, roughness: .5, metalness: .3, envMapIntensity: .12 })), -Math.PI / 2);
+  const tr = rot(mesh(new THREE.PlaneGeometry(TILE, TRACK_LEN), new THREE.MeshStandardMaterial({ map: trackTex, roughness: .95, metalness: 0, envMapIntensity: .05 })), -Math.PI / 2);
   tr.position.z = -TRACK_LEN / 2 + 20;
   const gr = rot(mesh(new THREE.PlaneGeometry(400, TRACK_LEN), new THREE.MeshStandardMaterial({ map: groundTex, roughness: .65, envMapIntensity: .2 })), -Math.PI / 2);
   gr.position.set(0, -.05, -TRACK_LEN / 2 + 20);
   world.add(tr, gr);
-  for (const s of [-1, 1]) world.add(box(.14, .22, TRACK_LEN, glow(W.accent, 1), s * 3.4, .11, -TRACK_LEN / 2 + 20));
+  for (const s of [-1, 1]) world.add(box(.3, .16, TRACK_LEN, M(0xc9cdd2, { roughness: .9 }), s * 3.45, .08, -TRACK_LEN / 2 + 20));   // meio-fio
   // estrelas / partículas
   clouds = [];
   for (let i = 0; i < 14; i++) { const c = makeCloud(); c.position.set((Math.random() - .5) * 300, 34 + Math.random() * 30, -60 - i * 11); world.add(c); clouds.push(c); }
@@ -537,7 +539,7 @@ function newGame(k) {
   $('chips').innerHTML = G.W.itens.map(i => `<span data-id="${i.id}">${i.ab}</span>`).join('');
   drawHearts(); $('score').textContent = '0';
   show('hud'); hide('menu'); hide('over'); hide('pause'); hide('quiz');
-  $('hint').classList.add('show'); setTimeout(() => $('hint').classList.remove('show'), 4200);
+  Music.play('game'); Music.volume(1); $('hint').classList.add('show'); setTimeout(() => $('hint').classList.remove('show'), 4200);
   state = 'play';
 }
 const show = id => $(id).classList.remove('hidden'), hide = id => $(id).classList.add('hidden');
@@ -549,18 +551,96 @@ function best(k, v) {
 }
 function refreshBest() { for (const k of ['externo', 'interno']) { const b = best(k, 0); $('best-' + k).textContent = b ? 'Recorde: ' + b : ''; } }
 
-/* ---------- som ---------- */
-let actx;
+/* ---------- som e música (gerados em tempo real, sem arquivos) ---------- */
+let actx, master, muted = false;
+try { muted = localStorage.getItem('robo-runner-mute') === '1'; } catch (e) { }
+function audio() {
+  if (!actx) {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    actx = new AC(); master = actx.createGain(); master.gain.value = muted ? 0 : 1; master.connect(actx.destination);
+  }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
 function beep(f, d = .09, type = 'square', v = .05, slide = 0) {
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    if (actx.state === 'suspended') actx.resume();
-    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    const c = audio(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
     o.type = type; o.frequency.setValueAtTime(f, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(f * slide, t + d);
     g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
-    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + d);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + d);
   } catch (e) { /* sem áudio */ }
+}
+function jingle(notes, gap = 60, type = 'triangle', v = .08) { notes.forEach((f, i) => setTimeout(() => beep(f, .16, type, v), i * gap)); }
+
+const Music = (function () {
+  let mode = null, step = 0, nextT = 0, held = false, bus, lp, noise;
+  const hz = n => 440 * Math.pow(2, (n - 69) / 12);
+  const CH = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];           // Lám · Fá · Dó · Sol
+  const LEAD = [
+    76, 0, 0, 76, 0, 74, 0, 72, 0, 0, 69, 0, 72, 0, 74, 0,
+    72, 0, 0, 72, 0, 69, 0, 65, 0, 0, 69, 0, 72, 0, 77, 0,
+    76, 0, 0, 76, 0, 79, 0, 76, 0, 0, 72, 0, 67, 0, 72, 0,
+    74, 0, 0, 74, 0, 71, 0, 67, 0, 0, 71, 0, 74, 0, 79, 0];
+  function setup(c) {
+    if (bus) return;
+    bus = c.createGain(); bus.gain.value = .5; bus.connect(master);
+    lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; lp.connect(bus);
+    noise = c.createBuffer(1, Math.floor(c.sampleRate * .25), c.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  function tone(t, n, dur, type, v, dest) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = hz(n);
+    g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t + .008); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + .02);
+  }
+  function hit(t, dur, v, type, freq) {
+    const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+    s.buffer = noise; f.type = type; f.frequency.value = freq;
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(bus); s.start(t); s.stop(t + dur);
+  }
+  function kick(t) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(45, t + .12);
+    g.gain.setValueAtTime(.5, t); g.gain.exponentialRampToValueAtTime(.0001, t + .16);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + .18);
+  }
+  function sched(i, t, spb) {
+    const ch = CH[(i >> 4) & 3], s = i & 15;
+    if (mode === 'game') {                                   // corrida: animada, com bateria
+      if (s % 4 === 0) kick(t);
+      if (s === 4 || s === 12) hit(t, .12, .16, 'bandpass', 1800);
+      if (s % 4 === 2) hit(t, .04, .07, 'highpass', 7000);
+      if (s === 0 || s === 3 || s === 6 || s === 8 || s === 11 || s === 14) tone(t, ch[0] - 24, spb * 1.6, 'sawtooth', .16, lp);
+      tone(t, ch[[0, 1, 2, 1][s % 4]] + 12, spb * .9, 'square', .035, lp);
+      if (LEAD[i]) tone(t, LEAD[i], spb * 2.2, 'square', .07, lp);
+    } else {                                                 // menu: calma, sem bateria
+      if (s === 0) for (const n of ch) tone(t, n, spb * 15, 'triangle', .05, bus);
+      if (s % 2 === 0) tone(t, ch[[0, 1, 2, 1, 0, 2, 1, 2][s / 2]] + (s === 6 ? 24 : 12), spb * 3, 'triangle', .07, bus);
+      if (s === 0 || s === 10) tone(t, ch[0] - 12, spb * 5, 'sine', .14, bus);
+    }
+  }
+  function tick() {
+    if (!mode || held || !actx || actx.state !== 'running') return;
+    const bpm = mode === 'game' ? 124 + ((G ? G.speed : 13) - 13) * 1.3 : 88, spb = 60 / bpm / 4;
+    if (nextT < actx.currentTime) nextT = actx.currentTime + .05;
+    while (nextT < actx.currentTime + .3) { sched(step, nextT, spb); nextT += spb; step = (step + 1) % 64; }
+  }
+  setInterval(tick, 80);
+  return {
+    play(m) { try { const c = audio(); if (!c) return; setup(c); if (mode !== m) { mode = m; step = 0; nextT = c.currentTime + .08; } held = false; } catch (e) { } },
+    hold(h) { held = h; },
+    volume(v) { if (bus) bus.gain.setTargetAtTime(.5 * v, actx.currentTime, .1); },
+    get mode() { return mode; }
+  };
+})();
+function setMuted(m) {
+  muted = m; try { localStorage.setItem('robo-runner-mute', m ? '1' : '0'); } catch (e) { }
+  if (master) master.gain.value = m ? 0 : 1;
+  document.querySelectorAll('.snd').forEach(b => b.classList.toggle('off', m));
 }
 
 /* ---------- geração do percurso ---------- */
@@ -600,7 +680,7 @@ function loseLife() {
   return G.lives <= 0;
 }
 function gameOver() {
-  state = 'over'; const sc = Math.floor(G.dist) + G.bonus; const b = best(G.k, sc);
+  state = 'over'; Music.play('menu'); Music.volume(1); const sc = Math.floor(G.dist) + G.bonus; const b = best(G.k, sc);
   $('oScore').textContent = sc; $('oBest').textContent = sc >= b && sc > 0 ? 'Novo recorde!' : 'Recorde: ' + b;
   $('oPieces').textContent = G.pieces; $('oQuiz').textContent = G.right;
   hide('hud'); hide('quiz'); show('over'); refreshBest();
@@ -609,14 +689,14 @@ function collectPiece(it) {
   G.pieces++; G.bonus += 50; G.got.add(it.id);
   const chip = document.querySelector(`#chips span[data-id="${it.id}"]`); if (chip) chip.classList.add('on');
   toast(`<b>${it.nome}</b> — ${it.fato}`);
-  beep(660, .08, 'triangle', .08); setTimeout(() => beep(990, .12, 'triangle', .08), 70);
+  jingle([1047, 1319, 1568, 2093]);
   if (!G.full && G.got.size === G.W.itens.length) { G.full = true; G.bonus += 500; setTimeout(() => toast('<b>Coleção completa!</b> +500 pontos'), 900); }
   if (G.pieces >= G.nextQuiz) { G.nextQuiz += 4; openQuiz(); }
 }
 
 /* ---------- quiz ---------- */
 function openQuiz() {
-  state = 'quiz';
+  state = 'quiz'; Music.volume(.35);
   const all = G.W.perguntas.map((p, i) => ({ p, i }));
   let pool = all.filter(q => G.got.has(q.p[0]) && !G.asked.has(q.i));
   if (!pool.length) { G.asked.clear(); pool = all.filter(q => G.got.has(q.p[0])); }
@@ -645,7 +725,7 @@ function answer(btn, ok, exp) {
   n.onclick = () => { hide('quiz'); if (dead) gameOver(); else countdown(); };
 }
 function countdown() {
-  state = 'count'; const c = $('count'); show('count'); let n = 3;
+  state = 'count'; Music.volume(1); Music.hold(false); const c = $('count'); show('count'); let n = 3;
   const step = () => {
     if (state !== 'count') { hide('count'); return; }
     if (n === 0) { hide('count'); state = 'play'; return; }
@@ -679,17 +759,21 @@ window.addEventListener('keydown', e => {
   if (m) { e.preventDefault(); act(m); }
   else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { if (state === 'play') pause(); else if (state === 'pause') resume(); }
 });
-function pause() { if (state !== 'play') return; state = 'pause'; show('pause'); }
+function pause() { if (state !== 'play') return; state = 'pause'; Music.hold(true); show('pause'); }
 function resume() { hide('pause'); countdown(); }
 function toMenu() {
-  state = 'menu'; hide('pause'); hide('over'); hide('hud'); hide('quiz'); show('menu');
+  state = 'menu'; Music.play('menu'); Music.volume(1); hide('pause'); hide('over'); hide('hud'); hide('quiz'); show('menu');
   for (const e of ents) scene.remove(e.obj); ents = [];
   robot.visible = true; robot.position.set(0, 0, 0); robot.userData.upper.rotation.x = 0; refreshBest();
 }
 $('btnPause').onclick = pause; $('btnResume').onclick = resume; $('btnQuit').onclick = toMenu;
 $('btnRetry').onclick = () => newGame(G.k); $('btnMenu').onclick = toMenu;
 document.querySelectorAll('.world').forEach(b => b.onclick = () => { beep(600, .1, 'triangle', .07); newGame(b.dataset.world); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { pause(); Music.hold(true); } else if (state !== 'pause') Music.hold(false); });
+const firstTouch = () => { if (state === 'menu') Music.play('menu'); };
+window.addEventListener('pointerdown', firstTouch, { once: true }); window.addEventListener('keydown', firstTouch, { once: true });
+document.querySelectorAll('.snd').forEach(b => b.onclick = () => { audio(); setMuted(!muted); if (!Music.mode) Music.play(state === 'play' ? 'game' : 'menu'); });
+setMuted(muted);
 
 /* =====================================================================
    LOOP
@@ -779,7 +863,7 @@ function frame(now) {
 
 resize(); setupWorld('externo'); refreshBest();
 // gancho de depuração (permite avançar quadros manualmente em testes)
-window.__game = { get state() { return state; }, get G() { return G; }, get ents() { return ents; }, P, act,
+window.__game = { get state() { return state; }, get G() { return G; }, get ents() { return ents; }, P, act, Music, get audioState() { return actx ? actx.state : 'none'; },
   step(dt) { if (state === 'play') { update(dt); placeCamera(dt); } } };
 requestAnimationFrame(frame);
 })();
